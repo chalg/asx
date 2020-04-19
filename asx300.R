@@ -44,7 +44,7 @@ asx_prices <- tq_get(asx300,
                      from = end - 365,
                      to   = end)
 
-# Reference.
+# Reference. Ignore the below for now because you can read in the csvs below.
 # https://cran.r-project.org/web/packages/tidyquant/vignettes/TQ05-performance-analysis-with-tidyquant.html#portfolios-asset-groups
 stock_returns_monthly <- asx_prices %>%
   group_by(code, sector) %>%
@@ -54,8 +54,8 @@ stock_returns_monthly <- asx_prices %>%
                col_rename = "Ra")
 stock_returns_monthly
 
-asx_prices %>% write_csv(paste0(data_path, "asx_prices.csv"))
-stock_returns_monthly %>% write_csv(paste0(data_path, "stock_returns_monthly.csv"))
+# asx_prices %>% write_csv(paste0(data_path, "asx_prices.csv"))
+# stock_returns_monthly %>% write_csv(paste0(data_path, "stock_returns_monthly.csv"))
 
 # read these in (not required in final script...)
 stock_returns_monthly <- read_csv(paste0(data_path, "stock_returns_monthly.csv"))
@@ -70,12 +70,14 @@ glimpse(stock_returns_monthly)
 
 # Calculate sector weights
 sector_weights <- stock_returns_monthly %>%
-  distinct(code, wts) %>% 
+  distinct(code, wts, sector) %>% 
   group_by(sector) %>% 
   summarise(sect_wts_total = sum(wts))
 
+glimpse(sector_weights)
 # Add sector weights column
 stock_returns_monthly <- stock_returns_monthly %>% left_join(sector_weights)
+glimpse(stock_returns_monthly)
 
 # Create weights table
 weights_tbl <- stock_returns_monthly %>% 
@@ -83,10 +85,11 @@ weights_tbl <- stock_returns_monthly %>%
   mutate(sector_wts = wts / sect_wts_total) %>%
   ungroup() %>% 
   select(sector, sector_wts)
+glimpse(weights_tbl)
 
 #### Not sure how to make this work per sector?? ####
 mult_monthly_returns_stocks <- tq_repeat_df(stock_returns_monthly, n = 11)
-
+glimpse(mult_monthly_returns_stocks)
 
 # Error: weights must be grouped by portfolio index.
 pfolio <- tq_portfolio(data = mult_monthly_returns_stocks,
